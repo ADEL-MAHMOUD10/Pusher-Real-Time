@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Get DOM elements
     const uploadArea = document.getElementById('upload-area');
     const fileInput = document.getElementById('file-upload');
     const progressContainer = document.getElementById('progress-container');
@@ -12,18 +13,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const copyBtn = document.getElementById('copy-btn');
 
     // Initialize Pusher
-    const pusher = new Pusher(PUSHER_CONFIG.key, {
-        cluster: PUSHER_CONFIG.cluster,
-        encrypted: true
-    });
+    try {
+        const pusher = new Pusher(PUSHER_CONFIG.key, {
+            cluster: PUSHER_CONFIG.cluster,
+            encrypted: true
+        });
 
-    // Subscribe to the upload channel
-    const channel = pusher.subscribe('upload-channel');
+        // Subscribe to the upload channel
+        const channel = pusher.subscribe('upload-channel');
 
-    // Listen for progress updates
-    channel.bind('progress-update', function(data) {
-        updateProgress(data);
-    });
+        // Listen for progress updates
+        channel.bind('progress-update', function(data) {
+            updateProgress(data);
+        });
+    } catch (error) {
+        console.error('Failed to initialize Pusher:', error);
+    }
 
     function updateProgress(data) {
         if (data.progress_percentage !== undefined) {
@@ -80,6 +85,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create floating particles
     const particlesContainer = document.getElementById('particles');
     function createParticles() {
+        if (!particlesContainer) {
+            return;
+        }
+        
         for (let i = 0; i < 30; i++) {
             const particle = document.createElement('div');
             particle.classList.add('particle');
@@ -136,6 +145,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update sound wave animation based on progress
     function updateSoundWaveAnimation(progress) {
         const soundWaveBars = document.querySelectorAll('.sound-wave-bar');
+        if (soundWaveBars.length === 0) {
+            return;
+        }
         
         if (progress < 10) {
             // Almost not moving
@@ -165,50 +177,56 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Handle drag and drop with improved visual feedback
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('border-indigo-400');
-        uploadArea.classList.add('bg-indigo-900/20');
-        uploadArea.style.transform = 'scale(1.02)';
-    });
+    if (uploadArea) {
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('border-indigo-400');
+            uploadArea.classList.add('bg-indigo-900/20');
+            uploadArea.style.transform = 'scale(1.02)';
+        });
 
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('border-indigo-400');
-        uploadArea.classList.remove('bg-indigo-900/20');
-        uploadArea.style.transform = '';
-    });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('border-indigo-400');
+            uploadArea.classList.remove('bg-indigo-900/20');
+            uploadArea.style.transform = '';
+        });
 
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('border-indigo-400');
-        uploadArea.classList.remove('bg-indigo-900/20');
-        uploadArea.style.transform = '';
-        const files = e.dataTransfer.files;
-        if (files.length) {
-            handleFileUpload(files[0]);
-        }
-    });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-indigo-400');
+            uploadArea.classList.remove('bg-indigo-900/20');
+            uploadArea.style.transform = '';
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                handleFileUpload(files[0]);
+            }
+        });
+    }
 
     // Handle file input change
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) {
-            handleFileUpload(e.target.files[0]);
-        }
-    });
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+    }
     
     // Handle copy button
-    copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(transcriptionText.textContent)
-            .then(() => {
-                copyBtn.textContent = "Copied!";
-                setTimeout(() => {
-                    copyBtn.textContent = "Copy";
-                }, 2000);
-            })
-            .catch(err => {
-                console.error('Could not copy text: ', err);
-            });
-    });
+    if (copyBtn && transcriptionText) {
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(transcriptionText.textContent)
+                .then(() => {
+                    copyBtn.textContent = "Copied!";
+                    setTimeout(() => {
+                        copyBtn.textContent = "Copy";
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Could not copy text: ', err);
+                });
+        });
+    }
 
     async function handleFileUpload(file) {
         if (!file.type.startsWith('audio/')) {
@@ -219,25 +237,41 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('file', file);
 
-        progressContainer.classList.remove('hidden');
-        result.classList.add('hidden');
-        uploadArea.classList.add('opacity-50', 'pointer-events-none');
+        // Show progress container
+        if (progressContainer) {
+            progressContainer.classList.remove('hidden');
+        }
+        
+        // Hide result container
+        if (result) {
+            result.classList.add('hidden');
+        }
+        
+        // Disable upload area
+        if (uploadArea) {
+            uploadArea.classList.add('opacity-50', 'pointer-events-none');
+        }
         
         // Reset progress indicators
-        progressBar.style.width = '0%';
-        progressPercentage.textContent = '0%';
-        progressMessage.textContent = 'Preparing upload...';
-        statusBadge.textContent = "Uploading";
-        statusBadge.style.backgroundColor = "rgba(99, 102, 241, 0.2)";
-        statusBadge.style.color = "#a5b4fc";
-        statusBadge.style.borderColor = "rgba(99, 102, 241, 0.3)";
+        if (progressBar) progressBar.style.width = '0%';
+        if (progressPercentage) progressPercentage.textContent = '0%';
+        if (progressMessage) progressMessage.textContent = 'Preparing upload...';
+        
+        if (statusBadge) {
+            statusBadge.textContent = "Uploading";
+            statusBadge.style.backgroundColor = "rgba(99, 102, 241, 0.2)";
+            statusBadge.style.color = "#a5b4fc";
+            statusBadge.style.borderColor = "rgba(99, 102, 241, 0.3)";
+        }
         
         // Activate sound wave animation
         updateSoundWaveAnimation(5);
         
         // Display file info
-        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        fileSizeInfo.textContent = `File: ${file.name} (${fileSizeMB}MB)`;
+        if (fileSizeInfo) {
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            fileSizeInfo.textContent = `File: ${file.name} (${fileSizeMB}MB)`;
+        }
 
         try {
             const response = await fetch('/upload', {
@@ -248,37 +282,50 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (data.status === 'success') {
-                progressMessage.textContent = 'Transcription completed!';
-                progressBar.style.width = '100%';
-                progressPercentage.textContent = '100%';
-                statusBadge.textContent = "Completed";
-                statusBadge.style.backgroundColor = "rgba(22, 163, 74, 0.2)";
-                statusBadge.style.color = "#86efac";
-                statusBadge.style.borderColor = "rgba(22, 163, 74, 0.3)";
+                if (progressMessage) progressMessage.textContent = 'Transcription completed!';
+                if (progressBar) progressBar.style.width = '100%';
+                if (progressPercentage) progressPercentage.textContent = '100%';
+                
+                if (statusBadge) {
+                    statusBadge.textContent = "Completed";
+                    statusBadge.style.backgroundColor = "rgba(22, 163, 74, 0.2)";
+                    statusBadge.style.color = "#86efac";
+                    statusBadge.style.borderColor = "rgba(22, 163, 74, 0.3)";
+                }
                 
                 // Update sound wave animation to completed state
                 updateSoundWaveAnimation(100);
                 
                 // Show transcription result
-                result.classList.remove('hidden');
-                transcriptionText.textContent = data.file_transcripe;
+                if (result) result.classList.remove('hidden');
+                if (transcriptionText) transcriptionText.textContent = data.file_transcripe;
             } else {
                 throw new Error(data.message || 'Upload failed');
             }
         } catch (error) {
-            progressMessage.textContent = `Error: ${error.message}`;
-            progressBar.style.width = '0%';
-            progressPercentage.textContent = '0%';
-            statusBadge.textContent = "Error";
-            statusBadge.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
-            statusBadge.style.color = "#fca5a5";
-            statusBadge.style.borderColor = "rgba(239, 68, 68, 0.3)";
+            console.error('Error during upload:', error);
+            if (progressMessage) progressMessage.textContent = `Error: ${error.message}`;
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressPercentage) progressPercentage.textContent = '0%';
+            
+            if (statusBadge) {
+                statusBadge.textContent = "Error";
+                statusBadge.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+                statusBadge.style.color = "#fca5a5";
+                statusBadge.style.borderColor = "rgba(239, 68, 68, 0.3)";
+            }
             
             // Update sound wave animation to error state
             updateSoundWaveAnimation(0);
         } finally {
-            uploadArea.classList.remove('opacity-50', 'pointer-events-none');
-            progressMessage.classList.remove("pulse-animation");
+            // Re-enable upload area
+            if (uploadArea) {
+                uploadArea.classList.remove('opacity-50', 'pointer-events-none');
+            }
+            
+            if (progressMessage) {
+                progressMessage.classList.remove("pulse-animation");
+            }
         }
     }
     
