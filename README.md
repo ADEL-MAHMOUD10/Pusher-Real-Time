@@ -2,8 +2,6 @@
 
 A real-time audio transcription web application that converts uploaded audio files to text using AssemblyAI's API with a sleek, modern UI featuring real-time progress updates through Pusher.
 
-![Audio Transcription Service](https://i.imgur.com/your-screenshot-url.png)
-
 ## Features
 
 - ✅ Upload audio files via drag-and-drop or file selector
